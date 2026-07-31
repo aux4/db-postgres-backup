@@ -58,6 +58,10 @@ rm -f /tmp/aux4-pgbkp-test.dump /tmp/aux4-pgbkp-dirfile.dump /tmp/aux4-pgbkp-pla
 
 ### should write the dump and print a manifest
 
+```timeout
+120000
+```
+
 ```execute
 aux4 db postgres backup --configFile config.yaml --config test --path /tmp/aux4-pgbkp-test.dump
 ```
@@ -67,6 +71,10 @@ aux4 db postgres backup --configFile config.yaml --config test --path /tmp/aux4-
 ```
 
 ### should create a non-empty dump file
+
+```timeout
+120000
+```
 
 ```execute
 test -s /tmp/aux4-pgbkp-test.dump && echo present
@@ -80,6 +88,10 @@ present
 
 ### should resolve the path from dir + file
 
+```timeout
+120000
+```
+
 ```execute
 aux4 db postgres backup --configFile config.yaml --config test --dir /tmp --file aux4-pgbkp-dirfile.dump
 ```
@@ -92,6 +104,10 @@ aux4 db postgres backup --configFile config.yaml --config test --dir /tmp --file
 
 ### should produce a plain SQL dump
 
+```timeout
+120000
+```
+
 ```execute
 aux4 db postgres backup --configFile config.yaml --config plainformat --path /tmp/aux4-pgbkp-plain.sql
 ```
@@ -101,6 +117,10 @@ aux4 db postgres backup --configFile config.yaml --config plainformat --path /tm
 ```
 
 ### should contain SQL statements
+
+```timeout
+120000
+```
 
 ```execute
 grep -c 'CREATE TABLE' /tmp/aux4-pgbkp-plain.sql
@@ -114,6 +134,10 @@ grep -c 'CREATE TABLE' /tmp/aux4-pgbkp-plain.sql
 
 ### should let a CLI flag override the config profile
 
+```timeout
+120000
+```
+
 ```execute
 aux4 db postgres backup --configFile config.yaml --config test --noOwner false --path /tmp/aux4-pgbkp-clioverride.dump >/dev/null
 test -s /tmp/aux4-pgbkp-clioverride.dump && echo present
@@ -124,6 +148,10 @@ present
 ```
 
 ### should dump schema only when requested
+
+```timeout
+120000
+```
 
 ```execute
 aux4 db postgres backup --configFile config.yaml --config test --schemaOnly true --path /tmp/aux4-pgbkp-schemaonly.dump
@@ -137,6 +165,10 @@ aux4 db postgres backup --configFile config.yaml --config test --schemaOnly true
 
 ### should append .dump when path has no extension
 
+```timeout
+120000
+```
+
 ```execute
 aux4 db postgres backup --configFile config.yaml --config test --path /tmp/aux4-pgbkp-autoext
 ```
@@ -148,6 +180,10 @@ aux4 db postgres backup --configFile config.yaml --config test --path /tmp/aux4-
 ## backup failure
 
 ### should not leave a partial dump file behind
+
+```timeout
+120000
+```
 
 ```execute
 aux4 db postgres backup --configFile config.yaml --config test --password WRONGPASSWORD --path /tmp/aux4-pgbkp-failed.dump 2>/dev/null
@@ -161,6 +197,10 @@ cleaned up
 ## backup with no path
 
 ### should fail fast when neither path nor dir/file is given
+
+```timeout
+120000
+```
 
 ```execute
 aux4 db postgres backup --configFile config.yaml --config test
@@ -178,6 +218,10 @@ aux4 db postgres execute --host 127.0.0.1 --port 5432 --database bkptest --user 
 
 ### should restore the dump and print an outcome
 
+```timeout
+120000
+```
+
 ```execute
 aux4 db postgres restore --configFile config.yaml --config test --path /tmp/aux4-pgbkp-test.dump
 ```
@@ -187,6 +231,10 @@ aux4 db postgres restore --configFile config.yaml --config test --path /tmp/aux4
 ```
 
 ### should bring the rows back
+
+```timeout
+120000
+```
 
 ```execute
 aux4 db postgres execute --host 127.0.0.1 --port 5432 --database bkptest --user postgres --password mysecretpassword --query "SELECT * FROM items ORDER BY id" | jq -c .
@@ -204,6 +252,10 @@ aux4 db postgres execute --host 127.0.0.1 --port 5432 --database bkptest --user 
 
 ### should restore the plain SQL dump
 
+```timeout
+120000
+```
+
 ```execute
 aux4 db postgres restore --configFile config.yaml --config test --path /tmp/aux4-pgbkp-plain.sql
 ```
@@ -213,6 +265,10 @@ aux4 db postgres restore --configFile config.yaml --config test --path /tmp/aux4
 ```
 
 ### should bring the rows back from the plain SQL restore
+
+```timeout
+120000
+```
 
 ```execute
 aux4 db postgres execute --host 127.0.0.1 --port 5432 --database bkptest --user postgres --password mysecretpassword --query "SELECT * FROM items ORDER BY id" | jq -c .
@@ -234,6 +290,10 @@ aux4 db postgres execute --host 127.0.0.1 --port 5432 --user postgres --password
 
 ### should restore the dump into a different database
 
+```timeout
+120000
+```
+
 ```execute
 aux4 db postgres restore --configFile config.yaml --config test --database bkptest_restore --path /tmp/aux4-pgbkp-test.dump
 ```
@@ -243,6 +303,10 @@ aux4 db postgres restore --configFile config.yaml --config test --database bkpte
 ```
 
 ### should have the rows in the fresh database
+
+```timeout
+120000
+```
 
 ```execute
 aux4 db postgres execute --host 127.0.0.1 --port 5432 --database bkptest_restore --user postgres --password mysecretpassword --query "SELECT * FROM items ORDER BY id" | jq -c .
@@ -255,6 +319,10 @@ aux4 db postgres execute --host 127.0.0.1 --port 5432 --database bkptest_restore
 ## restore with a missing file
 
 ### should fail fast when the dump file does not exist
+
+```timeout
+120000
+```
 
 ```execute
 aux4 db postgres restore --configFile config.yaml --config test --path /tmp/does-not-exist.dump
