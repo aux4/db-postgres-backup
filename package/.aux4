@@ -1,0 +1,216 @@
+{
+  "scope": "aux4",
+  "name": "db-postgres-backup",
+  "version": "0.1.0",
+  "description": "backup and restore provider commands for the db:postgres profile (wraps pg_dump/pg_restore/psql)",
+  "license": "Apache-2.0",
+  "tags": [
+    "db",
+    "database",
+    "postgres",
+    "backup",
+    "restore"
+  ],
+  "dependencies": [
+    "aux4/db-postgres"
+  ],
+  "system": [
+    [
+      "test:pg_dump --version",
+      "brew:libpq",
+      "linux:postgresql-client"
+    ],
+    [
+      "test:psql --version",
+      "brew:libpq",
+      "linux:postgresql-client"
+    ]
+  ],
+  "profiles": [
+    {
+      "name": "db:postgres",
+      "commands": [
+        {
+          "name": "backup",
+          "execute": [
+            "set:fullpath=",
+            "when:${dir} && ${file}:set:fullpath=${dir}/${file}",
+            "set:backuppath=nvl(path, fullpath)",
+            "when:${backuppath}==:exit:1:Error: provide --path, or --dir and --file",
+            "set:hasExt=!basename value(backuppath) | grep -c '\\.' || true",
+            "set:ext=.dump",
+            "when:${format}==plain:set:ext=.sql",
+            "when:${format}==tar:set:ext=.tar",
+            "when:${hasExt}==0:set:backuppath=${backuppath}${ext}",
+            "set:dumpOpts=--format value(format)",
+            "when:${clean}==true:set:dumpOpts=${dumpOpts} --clean",
+            "when:${noOwner}==true:set:dumpOpts=${dumpOpts} --no-owner",
+            "when:${noPrivileges}==true:set:dumpOpts=${dumpOpts} --no-privileges",
+            "when:${schemaOnly}==true:set:dumpOpts=${dumpOpts} --schema-only",
+            "when:${dataOnly}==true:set:dumpOpts=${dumpOpts} --data-only",
+            "set:dumpOpts=${dumpOpts} param(table:table) param(excludeTable:exclude-table) ${options}",
+            "PGDUMP=$(command -v pg_dump 2>/dev/null); if [ -z \"$PGDUMP\" ]; then BP=$(brew --prefix libpq 2>/dev/null); [ -n \"$BP\" ] && [ -x \"$BP/bin/pg_dump\" ] && PGDUMP=\"$BP/bin/pg_dump\"; fi; if [ -z \"$PGDUMP\" ]; then echo 'Error: pg_dump not found. Install libpq (brew install libpq / apt-get install postgresql-client).' >&2; exit 1; fi; PGPASSWORD=value(password) \"$PGDUMP\" params(host, port) param(user:username) ${dumpOpts} value(database) -f value(backuppath) || { rm -f value(backuppath); exit 1; }",
+            "set:bytes=!wc -c < value(backuppath) | tr -d ' '",
+            "set:checksum=!( shasum -a 256 value(backuppath) 2>/dev/null || sha256sum value(backuppath) ) | awk '{print $1}'",
+            "set:fmtLabel=pg-dump-custom",
+            "when:${format}==plain:set:fmtLabel=pg-dump-plain",
+            "when:${format}==tar:set:fmtLabel=pg-dump-tar",
+            "echo '{\"path\":\"${backuppath}\",\"bytes\":${bytes},\"checksum\":\"${checksum}\",\"status\":\"success\",\"format\":\"${fmtLabel}\"}'"
+          ],
+          "help": {
+            "text": "Backup the database using pg_dump",
+            "variables": [
+              {
+                "name": "host",
+                "text": "Database host",
+                "default": "localhost"
+              },
+              {
+                "name": "port",
+                "text": "Database port",
+                "default": "5432"
+              },
+              {
+                "name": "database",
+                "text": "Database name",
+                "default": "postgres"
+              },
+              {
+                "name": "user",
+                "text": "Database user",
+                "default": "postgres"
+              },
+              {
+                "name": "password",
+                "text": "Database password"
+              },
+              {
+                "name": "path",
+                "text": "Full path to write the dump file (takes precedence over --dir/--file)",
+                "default": ""
+              },
+              {
+                "name": "dir",
+                "text": "Directory to write the dump file (combined with --file)",
+                "default": ""
+              },
+              {
+                "name": "file",
+                "text": "File name for the dump (combined with --dir)",
+                "default": ""
+              },
+              {
+                "name": "format",
+                "text": "Output format: custom, plain, or tar (pg_dump --format)",
+                "default": "custom"
+              },
+              {
+                "name": "clean",
+                "text": "Include DROP statements before CREATE (pg_dump --clean)",
+                "default": "true"
+              },
+              {
+                "name": "noOwner",
+                "text": "Omit ownership commands (pg_dump --no-owner)",
+                "default": "true"
+              },
+              {
+                "name": "noPrivileges",
+                "text": "Omit privilege/grant commands (pg_dump --no-privileges)",
+                "default": "true"
+              },
+              {
+                "name": "schemaOnly",
+                "text": "Dump only schema, no data (pg_dump --schema-only)",
+                "default": ""
+              },
+              {
+                "name": "dataOnly",
+                "text": "Dump only data, no schema (pg_dump --data-only)",
+                "default": ""
+              },
+              {
+                "name": "table",
+                "text": "Dump only this table (pg_dump -t)",
+                "default": ""
+              },
+              {
+                "name": "excludeTable",
+                "text": "Exclude this table from the dump (pg_dump --exclude-table)",
+                "default": ""
+              },
+              {
+                "name": "options",
+                "text": "Additional raw pg_dump options appended verbatim",
+                "default": ""
+              }
+            ]
+          }
+        },
+        {
+          "name": "restore",
+          "execute": [
+            "set:fullpath=",
+            "when:${dir} && ${file}:set:fullpath=${dir}/${file}",
+            "set:backuppath=nvl(path, fullpath)",
+            "when:${backuppath}==:exit:1:Error: provide --path, or --dir and --file",
+            "exists(backuppath) || { echo 'Error: backup file not found: ${backuppath}' >&2; exit 1; }",
+            "set:isPlain=!file value(backuppath) | grep -q 'text' && echo yes || echo no",
+            "when:${isPlain}==yes:PSQL=$(command -v psql 2>/dev/null); if [ -z \"$PSQL\" ]; then BP=$(brew --prefix libpq 2>/dev/null); [ -n \"$BP\" ] && [ -x \"$BP/bin/psql\" ] && PSQL=\"$BP/bin/psql\"; fi; if [ -z \"$PSQL\" ]; then echo 'Error: psql not found. Install libpq (brew install libpq / apt-get install postgresql-client).' >&2; exit 1; fi; PGPASSWORD=value(password) \"$PSQL\" -q params(host, port) param(user:username) value(database) ${options} -f value(backuppath) > /dev/null",
+            "when:${isPlain}==no:PGRESTORE=$(command -v pg_restore 2>/dev/null); if [ -z \"$PGRESTORE\" ]; then BP=$(brew --prefix libpq 2>/dev/null); [ -n \"$BP\" ] && [ -x \"$BP/bin/pg_restore\" ] && PGRESTORE=\"$BP/bin/pg_restore\"; fi; if [ -z \"$PGRESTORE\" ]; then echo 'Error: pg_restore not found. Install libpq (brew install libpq / apt-get install postgresql-client).' >&2; exit 1; fi; PGPASSWORD=value(password) \"$PGRESTORE\" --clean --if-exists --no-owner --no-privileges --dbname value(database) params(host, port) param(user:username) ${options} value(backuppath)",
+            "echo '{\"path\":\"${backuppath}\",\"status\":\"success\",\"action\":\"restore\"}'"
+          ],
+          "help": {
+            "text": "Restore the database from a pg_dump file (auto-detects plain SQL vs custom/tar format)",
+            "variables": [
+              {
+                "name": "host",
+                "text": "Database host",
+                "default": "localhost"
+              },
+              {
+                "name": "port",
+                "text": "Database port",
+                "default": "5432"
+              },
+              {
+                "name": "database",
+                "text": "Database name",
+                "default": "postgres"
+              },
+              {
+                "name": "user",
+                "text": "Database user",
+                "default": "postgres"
+              },
+              {
+                "name": "password",
+                "text": "Database password"
+              },
+              {
+                "name": "path",
+                "text": "Full path to the dump file to restore (takes precedence over --dir/--file)",
+                "default": ""
+              },
+              {
+                "name": "dir",
+                "text": "Directory containing the dump file (combined with --file)",
+                "default": ""
+              },
+              {
+                "name": "file",
+                "text": "File name of the dump (combined with --dir)",
+                "default": ""
+              },
+              {
+                "name": "options",
+                "text": "Additional raw psql/pg_restore options appended verbatim",
+                "default": ""
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

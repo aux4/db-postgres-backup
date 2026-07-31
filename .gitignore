@@ -1,0 +1,4 @@
+*.zip
+.DS_Store
+.local.db
+.jobs/
