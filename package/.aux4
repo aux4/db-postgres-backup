@@ -1,7 +1,7 @@
 {
   "scope": "aux4",
   "name": "db-postgres-backup",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "backup and restore provider commands for the db:postgres profile (wraps pg_dump/pg_restore/psql)",
   "license": "Apache-2.0",
   "tags": [
