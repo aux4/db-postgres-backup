@@ -55,7 +55,8 @@
             "set:fmtLabel=pg-dump-custom",
             "when:${format}==plain:set:fmtLabel=pg-dump-plain",
             "when:${format}==tar:set:fmtLabel=pg-dump-tar",
-            "echo '{\"path\":\"${backuppath}\",\"bytes\":${bytes},\"checksum\":\"${checksum}\",\"status\":\"success\",\"format\":\"${fmtLabel}\"}'"
+            "set:status=success",
+            "echo 'object(backuppath:path, bytes, checksum, status, fmtLabel:format)'"
           ],
           "help": {
             "text": "Backup the database using pg_dump",
@@ -154,11 +155,13 @@
             "when:${dir} && ${file}:set:fullpath=${dir}/${file}",
             "set:backuppath=nvl(path, fullpath)",
             "when:${backuppath}==:exit:1:Error: provide --path, or --dir and --file",
-            "exists(backuppath) || { echo 'Error: backup file not found: ${backuppath}' >&2; exit 1; }",
+            "exists(backuppath) || { echo 'Error: backup file not found:' value(backuppath) >&2; exit 1; }",
             "set:isPlain=!file value(backuppath) | grep -q 'text' && echo yes || echo no",
             "when:${isPlain}==yes:PSQL=$(command -v psql 2>/dev/null); if [ -z \"$PSQL\" ]; then BP=$(brew --prefix libpq 2>/dev/null); [ -n \"$BP\" ] && [ -x \"$BP/bin/psql\" ] && PSQL=\"$BP/bin/psql\"; fi; if [ -z \"$PSQL\" ]; then echo 'Error: psql not found. Install libpq (brew install libpq / apt-get install postgresql-client).' >&2; exit 1; fi; PGPASSWORD=value(password) \"$PSQL\" -q params(host, port) param(user:username) value(database) ${options} -f value(backuppath) > /dev/null",
             "when:${isPlain}==no:PGRESTORE=$(command -v pg_restore 2>/dev/null); if [ -z \"$PGRESTORE\" ]; then BP=$(brew --prefix libpq 2>/dev/null); [ -n \"$BP\" ] && [ -x \"$BP/bin/pg_restore\" ] && PGRESTORE=\"$BP/bin/pg_restore\"; fi; if [ -z \"$PGRESTORE\" ]; then echo 'Error: pg_restore not found. Install libpq (brew install libpq / apt-get install postgresql-client).' >&2; exit 1; fi; PGPASSWORD=value(password) \"$PGRESTORE\" --clean --if-exists --no-owner --no-privileges --dbname value(database) params(host, port) param(user:username) ${options} value(backuppath)",
-            "echo '{\"path\":\"${backuppath}\",\"status\":\"success\",\"action\":\"restore\"}'"
+            "set:status=success",
+            "set:action=restore",
+            "echo 'object(backuppath:path, status, action)'"
           ],
           "help": {
             "text": "Restore the database from a pg_dump file (auto-detects plain SQL vs custom/tar format)",

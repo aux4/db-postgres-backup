@@ -63,7 +63,7 @@ aux4 db postgres backup --configFile config.yaml --config test --path /tmp/aux4-
 ```
 
 ```expect:regex
-\{"path":"/tmp/aux4-pgbkp-test\.dump","bytes":\d+,"checksum":"[a-f0-9]{64}","status":"success","format":"pg-dump-custom"\}
+\{"bytes":"\d+","checksum":"[a-f0-9]{64}","format":"pg-dump-custom","path":"/tmp/aux4-pgbkp-test\.dump","status":"success"\}
 ```
 
 ### should create a non-empty dump file
@@ -85,7 +85,7 @@ aux4 db postgres backup --configFile config.yaml --config test --dir /tmp --file
 ```
 
 ```expect:regex
-\{"path":"/tmp/aux4-pgbkp-dirfile\.dump","bytes":\d+,"checksum":"[a-f0-9]{64}","status":"success","format":"pg-dump-custom"\}
+\{"bytes":"\d+","checksum":"[a-f0-9]{64}","format":"pg-dump-custom","path":"/tmp/aux4-pgbkp-dirfile\.dump","status":"success"\}
 ```
 
 ## backup with plain format
@@ -97,7 +97,7 @@ aux4 db postgres backup --configFile config.yaml --config plainformat --path /tm
 ```
 
 ```expect:regex
-\{"path":"/tmp/aux4-pgbkp-plain\.sql","bytes":\d+,"checksum":"[a-f0-9]{64}","status":"success","format":"pg-dump-plain"\}
+\{"bytes":"\d+","checksum":"[a-f0-9]{64}","format":"pg-dump-plain","path":"/tmp/aux4-pgbkp-plain\.sql","status":"success"\}
 ```
 
 ### should contain SQL statements
@@ -130,7 +130,7 @@ aux4 db postgres backup --configFile config.yaml --config test --schemaOnly true
 ```
 
 ```expect:regex
-\{"path":"/tmp/aux4-pgbkp-schemaonly\.dump","bytes":\d+,"checksum":"[a-f0-9]{64}","status":"success","format":"pg-dump-custom"\}
+\{"bytes":"\d+","checksum":"[a-f0-9]{64}","format":"pg-dump-custom","path":"/tmp/aux4-pgbkp-schemaonly\.dump","status":"success"\}
 ```
 
 ## auto-append extension
@@ -142,7 +142,7 @@ aux4 db postgres backup --configFile config.yaml --config test --path /tmp/aux4-
 ```
 
 ```expect:regex
-\{"path":"/tmp/aux4-pgbkp-autoext\.dump","bytes":\d+,"checksum":"[a-f0-9]{64}","status":"success","format":"pg-dump-custom"\}
+\{"bytes":"\d+","checksum":"[a-f0-9]{64}","format":"pg-dump-custom","path":"/tmp/aux4-pgbkp-autoext\.dump","status":"success"\}
 ```
 
 ## backup failure
@@ -183,7 +183,7 @@ aux4 db postgres restore --configFile config.yaml --config test --path /tmp/aux4
 ```
 
 ```expect
-{"path":"/tmp/aux4-pgbkp-test.dump","status":"success","action":"restore"}
+{"action":"restore","path":"/tmp/aux4-pgbkp-test.dump","status":"success"}
 ```
 
 ### should bring the rows back
@@ -209,7 +209,7 @@ aux4 db postgres restore --configFile config.yaml --config test --path /tmp/aux4
 ```
 
 ```expect
-{"path":"/tmp/aux4-pgbkp-plain.sql","status":"success","action":"restore"}
+{"action":"restore","path":"/tmp/aux4-pgbkp-plain.sql","status":"success"}
 ```
 
 ### should bring the rows back from the plain SQL restore
@@ -239,7 +239,7 @@ aux4 db postgres restore --configFile config.yaml --config test --database bkpte
 ```
 
 ```expect
-{"path":"/tmp/aux4-pgbkp-test.dump","status":"success","action":"restore"}
+{"action":"restore","path":"/tmp/aux4-pgbkp-test.dump","status":"success"}
 ```
 
 ### should have the rows in the fresh database
